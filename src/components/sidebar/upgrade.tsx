@@ -1,7 +1,36 @@
-import React from 'react'
+"use client";
+
+import { authClient } from "~/lib/auth-client";
+import { Button } from "../ui/button";
+import { Crown, Sparkles } from "lucide-react";
 
 export default function Upgrade() {
+  const upgrade = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    await authClient.checkout({
+      products: [
+        "490c4cd7-07d5-42c0-8813-db8f51ce9f90",
+        "bf7ec5f86-3b44-46ea-a453-00604bd9fd2c",
+        "f2013ecd-f43c-40ab-bf8e-549e47b66779",
+      ],
+    });
+  };
+
   return (
-    <div>upgrade</div>
-  )
+    <Button
+      variant="outline"
+      size="sm"
+      className="group relative ml-2 cursor-pointer overflow-hidden border-orange-400/50 bg-gradient-to-r from-orange-400/10 to-pink-500/10 text-orange-400 transition-all duration-300 hover:border-orange-500/70 hover:bg-gradient-to-r hover:from-orange-500 hover:to-pink-600 hover:text-white hover:shadow-lg hover:shadow-orange-500/25"
+      onClick={upgrade}
+    >
+      <div className="flex items-center gap-2">
+        <Crown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+        <span className="font-medium">Upgrade</span>
+        <Sparkles className="h-3 w-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      </div>
+
+      {/* Subtle glow effect */}
+      <div className="absolute inset-0 rounded-md bg-gradient-to-r from-orange-400/20 to-pink-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    </Button>
+  );
 }
