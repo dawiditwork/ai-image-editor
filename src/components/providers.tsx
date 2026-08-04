@@ -1,0 +1,50 @@
+"use client";
+
+import { AuthProvider } from "@better-auth-ui/react"
+import { AuthUIProvider } from "@daveyplate/better-auth-ui";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+
+import { authClient } from "~/lib/auth-client";
+
+export function Providers({ children }: { children: ReactNode }) {
+  const router = useRouter();
+
+  return (
+   <AuthProvider
+  authClient={authClient}
+  navigate={({ to, replace }) => {
+    if (replace) {
+      router.replace(to);
+    } else {
+      router.push(to);
+    }
+  }}
+>
+      <AuthUIProvider
+        authClient={authClient}
+        navigate={(...args) => router.push(...args)}
+        replace={(...args) => router.replace(...args)}
+        onSessionChange={async () => {
+          router.refresh();
+
+          try {
+            const session = await authClient.getSession();
+            if (session.data?.user && typeof window !== "undefined") {
+              const currentPath = window.location.pathname;
+              if (currentPath.startsWith("/auth/")) {
+                router.push("/dashboard");
+              }
+            }
+          } catch (error) {
+            console.log("Session check failed:", error);
+          }
+        }}
+        Link={Link}
+      >
+        {children}
+      </AuthUIProvider>
+    </AuthProvider>
+  );
+}
