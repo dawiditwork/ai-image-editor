@@ -9,7 +9,7 @@ import { db } from "~/server/db";
 
 const polarClient = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
-  server: "sandbox",
+  server: "production",
 });
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -194,15 +194,15 @@ export const auth = betterAuth({
         checkout({
           products: [
             {
-              productId: "490c4cd7-07d5-42c0-8813-db8f51ce9f90",
+              productId: "2936d517-b6b8-4afa-8016-82508de848a9",
               slug: "small",
             },
             {
-              productId: "f7ec5f86-3b44-46ea-a453-00604bd9fd2c",
+              productId: "ca9df392-3a7f-44eb-b050-70b16eb4e2a6",
               slug: "medium",
             },
             {
-              productId: "f2013ecd-f43c-40ab-bf8e-549e47b66779",
+              productId: "29381f1e-0f43-407e-a15d-73c4db0a9a98",
               slug: "large",
             },
           ],
@@ -220,46 +220,83 @@ export const auth = betterAuth({
               "POLAR WEBHOOK ORDER PAID",
               order.data.productId,
             );
+            const polarOrderId = order.data.id;
 
-            const externalCustomerId = order.data.customer.externalId;
+         const externalCustomerId = order.data.customer.externalId;
+          const customerEmail = order.data.customer.email;
 
-            if (!externalCustomerId) {
-              console.error("No external customer ID found.");
-              throw new Error("No external customer ID found.");
-            }
+          let user = externalCustomerId
+            ? await db.user.findUnique({
+                where: {
+                  id: externalCustomerId,
+                },
+              })
+            : null;
+
+          if (!user) {
+            user = await db.user.findUnique({
+              where: {
+                email: customerEmail,
+              },
+            });
+          }
+
+if (!user) {
+  console.error("No matching user found for Polar order.");
+  throw new Error("No matching user found for Polar order.");
+}
 
             const productId = order.data.productId;
 
             let creditsToAdd = 0;
 
-            switch (productId) {
-              case "490c4cd7-07d5-42c0-8813-db8f51ce9f90":
-                creditsToAdd = 50;
-                break;
+           switch (productId) {
+  case "2936d517-b6b8-4afa-8016-82508de848a9":
+    creditsToAdd = 50;
+    break;
 
-              case "f7ec5f86-3b44-46ea-a453-00604bd9fd2c":
-                creditsToAdd = 200;
-                break;
+  case "ca9df392-3a7f-44eb-b050-70b16eb4e2a6":
+    creditsToAdd = 200;
+    break;
 
-              case "f2013ecd-f43c-40ab-bf8e-549e47b66779":
-                creditsToAdd = 1000;
-                break;
+  case "29381f1e-0f43-407e-a15d-73c4db0a9a98":
+    creditsToAdd = 1000;
+    break;
 
-              default:
-                console.error("Unknown Polar product:", productId);
-                return;
-            }
+  default:
+    console.error("Unknown Polar product:", productId);
+    return;
+}
+  const existingPurchase = await db.purchase.findUnique({
+  where: {
+    polarOrderId,
+  },
+});
 
-            await db.user.update({
-              where: {
-                id: externalCustomerId,
-              },
-              data: {
-                credits: {
-                  increment: creditsToAdd,
-                },
-              },
-            });
+if (existingPurchase) {
+  console.log("POLAR ORDER ALREADY PROCESSED", polarOrderId);
+  return;
+}
+ await db.$transaction([
+  db.purchase.create({
+    data: {
+      polarOrderId,
+      userId: user.id,
+      credits: creditsToAdd,
+    },
+  }),
+
+  db.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      credits: {
+        increment: creditsToAdd,
+      },
+    },
+  }),
+]);
           },
         }),
       ],

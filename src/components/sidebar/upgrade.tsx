@@ -1,34 +1,161 @@
 "use client";
 
-import { Crown, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-
+import { Crown, Sparkles, Zap } from "lucide-react";
+import { authClient } from "~/lib/auth-client";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+
+const packages = [
+  {
+    name: "Small",
+    credits: 50,
+    price: "4.99",
+    slug: "small",
+    icon: Sparkles,
+    description: "Perfect for trying out AI tools",
+  },
+  {
+    name: "Medium",
+    credits: 200,
+    price: "14.99",
+    slug: "medium",
+    icon: Zap,
+    description: "Best choice for regular use",
+    popular: true,
+  },
+  {
+    name: "Large",
+    credits: 1000,
+    price: "49.99",
+    slug: "large",
+    icon: Crown,
+    description: "Maximum value for power users",
+  },
+] as const;
 
 export default function Upgrade() {
-  const upgrade = () => {
-    toast.info("Payments are temporarily disabled during the beta.", {
-      description:
-        "Every new account receives 10 free credits to test the AI tools.",
+  const handleCheckout = async (
+    slug: "small" | "medium" | "large",
+  ) => {
+    await authClient.checkout({
+      slug,
     });
   };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="group relative ml-2 cursor-pointer overflow-hidden border-orange-400/50 bg-gradient-to-r from-orange-400/10 to-pink-500/10 text-orange-400 transition-all duration-300 hover:border-orange-500/70 hover:bg-gradient-to-r hover:from-orange-500 hover:to-pink-600 hover:text-white hover:shadow-lg hover:shadow-orange-500/25"
-      onClick={upgrade}
-    >
-      <div className="flex items-center gap-2">
-        <Crown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="hover:border-violet-500/50 hover:bg-violet-500/5 w-full justify-start gap-2 transition-colors"
+        >
+          <Crown className="h-4 w-4 text-violet-600" />
+          Buy Credits
+        </Button>
+      </DialogTrigger>
 
-        <span className="font-medium">Beta</span>
+      <DialogContent className="w-[95vw] max-w-[680px] p-5 sm:max-w-[680px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            Buy Credits
+          </DialogTitle>
 
-        <Sparkles className="h-3 w-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      </div>
+          <DialogDescription>
+            Choose a credit package. Credits never expire.
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="absolute inset-0 rounded-md bg-gradient-to-r from-orange-400/20 to-pink-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-    </Button>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          {packages.map((pack) => {
+            const Icon = pack.icon;
+            const isPopular =
+              "popular" in pack && pack.popular;
+
+            return (
+              <div
+                key={pack.slug}
+                className={`relative flex min-h-[270px] flex-col rounded-xl border p-4 transition-all ${
+                  isPopular
+                    ? "border-violet-500 bg-violet-500/5 ring-2 ring-violet-500/15"
+                    : "border-border bg-background hover:border-violet-500/30"
+                }`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-violet-600 px-3 py-1 text-[11px] font-semibold text-white">
+                    Most Popular
+                  </div>
+                )}
+
+                <div
+                  className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${
+                    isPopular
+                      ? "bg-violet-500/10 text-violet-600"
+                      : "bg-muted"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+
+                <h3 className="text-lg font-semibold">
+                  {pack.name}
+                </h3>
+
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span
+                    className={`text-3xl font-bold tracking-tight ${
+                      isPopular ? "text-violet-600" : ""
+                    }`}
+                  >
+                    {pack.credits}
+                  </span>
+
+                  <span className="text-muted-foreground text-xs">
+                    credits
+                  </span>
+                </div>
+
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className="text-muted-foreground text-xs font-medium">
+                    CHF
+                  </span>
+
+                  <span className="text-xl font-bold">
+                    {pack.price}
+                  </span>
+                </div>
+
+                <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+                  {pack.description}
+                </p>
+
+                <Button
+                  className={
+                    isPopular
+                      ? "mt-auto w-full bg-violet-600 text-white hover:bg-violet-700"
+                      : "mt-auto w-full hover:border-violet-500/50 hover:bg-violet-500/5"
+                  }
+                  size="sm"
+                  variant={isPopular ? "default" : "outline"}
+                  onClick={() => handleCheckout(pack.slug)}
+                >
+                  Buy {pack.name}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-muted-foreground mt-1 text-center text-[11px]">
+          Secure payment powered by Polar
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }

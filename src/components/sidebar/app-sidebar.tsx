@@ -42,10 +42,13 @@ export async function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="bg-muted/30 border-t p-3">
-        <div className="mb-3 flex w-full items-center justify-center gap-2 text-xs">
-          <Credits />
-          <Upgrade />
-        </div>
+      <div className="mb-3 flex w-full flex-col gap-2">
+  <div className="flex w-full items-center justify-center">
+    <Credits />
+  </div>
+
+  <Upgrade />
+</div>
         <UserButton
           variant="outline"
           className="border-muted-foreground/20 hover:border-primary/50 w-full transition-colors"
