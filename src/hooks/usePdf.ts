@@ -17,7 +17,7 @@ const normalizeImage = async (
   const objectUrl = URL.createObjectURL(file);
 
   try {
-    const image = new Image();
+    const image = new window.Image();
 
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();

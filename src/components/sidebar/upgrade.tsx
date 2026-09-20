@@ -41,13 +41,14 @@ const packages = [
 ] as const;
 
 export default function Upgrade() {
-  const handleCheckout = async (
-    slug: "small" | "medium" | "large",
-  ) => {
-    await authClient.checkout({
-      slug,
-    });
-  };
+const handleCheckout = async (
+  slug: "small" | "medium" | "large",
+) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  await authClient.checkout({
+    slug,
+  });
+};
 
   return (
     <Dialog>

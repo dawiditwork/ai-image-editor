@@ -233,13 +233,13 @@ export const auth = betterAuth({
               })
             : null;
 
-          if (!user) {
-            user = await db.user.findUnique({
+            user ??= await db.user.findUnique({
+
               where: {
                 email: customerEmail,
               },
             });
-          }
+          
 
 if (!user) {
   console.error("No matching user found for Polar order.");
