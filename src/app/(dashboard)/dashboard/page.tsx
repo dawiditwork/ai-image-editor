@@ -131,23 +131,6 @@ setUserProjects(projects);
         </p>
       </div>
 
-            <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <CardContent className="flex items-start gap-3 p-5">
-          <Sparkles className="mt-0.5 h-5 w-5 text-blue-600" />
-
-          <div>
-            <h3 className="font-semibold text-blue-900">
-              Public Beta
-            </h3>
-
-            <p className="mt-1 text-sm text-blue-700">
-              Payments are currently disabled while we prepare the public launch.
-              Every account includes 10 free AI credits to explore the AI tools.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md">              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
