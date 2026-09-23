@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { Polar } from "@polar-sh/sdk";
 import { Resend } from "resend";
+import { getCreditsForProduct } from "~/lib/polar-credits";
 
 import { env } from "~/env";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
@@ -247,26 +248,13 @@ if (!user) {
 }
 
             const productId = order.data.productId;
+    const creditsToAdd = getCreditsForProduct(productId);
 
-            let creditsToAdd = 0;
-
-           switch (productId) {
-  case "2936d517-b6b8-4afa-8016-82508de848a9":
-    creditsToAdd = 50;
-    break;
-
-  case "ca9df392-3a7f-44eb-b050-70b16eb4e2a6":
-    creditsToAdd = 200;
-    break;
-
-  case "29381f1e-0f43-407e-a15d-73c4db0a9a98":
-    creditsToAdd = 1000;
-    break;
-
-  default:
-    console.error("Unknown Polar product:", productId);
-    return;
+if (creditsToAdd === null) {
+  console.error("Unknown Polar product:", productId);
+  return;
 }
+     
   const existingPurchase = await db.purchase.findUnique({
   where: {
     polarOrderId,
