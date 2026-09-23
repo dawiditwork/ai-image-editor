@@ -3,10 +3,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { Polar } from "@polar-sh/sdk";
 import { Resend } from "resend";
 import { getCreditsForProduct } from "~/lib/polar-credits";
+import { processPolarOrder } from "~/lib/process-polar-order";
 
 import { env } from "~/env";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { db } from "~/server/db";
+import { Prisma } from "@prisma/client";
 
 const polarClient = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
@@ -216,77 +218,10 @@ export const auth = betterAuth({
         webhooks({
           secret: env.POLAR_WEBHOOK_SECRET,
 
-          onOrderPaid: async (order) => {
-            console.log(
-              "POLAR WEBHOOK ORDER PAID",
-              order.data.productId,
-            );
-            const polarOrderId = order.data.id;
-
-         const externalCustomerId = order.data.customer.externalId;
-          const customerEmail = order.data.customer.email;
-
-          let user = externalCustomerId
-            ? await db.user.findUnique({
-                where: {
-                  id: externalCustomerId,
-                },
-              })
-            : null;
-
-            user ??= await db.user.findUnique({
-
-              where: {
-                email: customerEmail,
-              },
-            });
-          
-
-if (!user) {
-  console.error("No matching user found for Polar order.");
-  throw new Error("No matching user found for Polar order.");
-}
-
-            const productId = order.data.productId;
-    const creditsToAdd = getCreditsForProduct(productId);
-
-if (creditsToAdd === null) {
-  console.error("Unknown Polar product:", productId);
-  return;
-}
-     
-  const existingPurchase = await db.purchase.findUnique({
-  where: {
-    polarOrderId,
+           onOrderPaid: async (order) => {
+    await processPolarOrder(order.data);
   },
-});
-
-if (existingPurchase) {
-  console.log("POLAR ORDER ALREADY PROCESSED", polarOrderId);
-  return;
-}
- await db.$transaction([
-  db.purchase.create({
-    data: {
-      polarOrderId,
-      userId: user.id,
-      credits: creditsToAdd,
-    },
-  }),
-
-  db.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      credits: {
-        increment: creditsToAdd,
-      },
-    },
-  }),
-]);
-          },
-        }),
+}),
       ],
     }),
   ],
