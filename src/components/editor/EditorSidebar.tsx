@@ -204,7 +204,7 @@ export default function EditorSidebar({
                                         <h4 className="text-xs font-bold text-green-900">
                                           Smart Object Crop
                                         </h4>
-                                        <p className="text-xs text-green-700">FREE</p>
+                                        <p className="text-xs text-green-700">1 credit</p>
                                       </div>
                                     </div>
         
@@ -270,7 +270,7 @@ export default function EditorSidebar({
                                             <h4 className="text-xs font-bold text-indigo-900">
                                               Magic AI Edit
                                             </h4>
-                                            <p className="text-xs text-indigo-700">AI powered</p>
+                                            <p className="text-xs text-indigo-700">2 credits</p>
                                           </div>
         
                                           <Input

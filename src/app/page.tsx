@@ -97,11 +97,6 @@ const faq = [
       "AI credits are only used for AI Image Edit, Background Removal and AI Upscaling. Every new account includes 10 free AI credits. Free tools never consume credits.",
   },
   {
-    question: "Why are payments disabled?",
-    answer:
-      "AI Image Toolkitis currently in public beta. Payments are temporarily disabled while we prepare the public launch. Every account receives 10 free AI credits to explore the AI features.",
-  },
-  {
     question: "Do I need an account?",
     answer:
       "Yes. Create a free account to save your projects and receive 10 free AI credits.",
