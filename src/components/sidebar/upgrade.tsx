@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Crown, Sparkles, Zap } from "lucide-react";
+import { toast } from "sonner";
+
 import { authClient } from "~/lib/auth-client";
 import { Button } from "../ui/button";
 import {
@@ -40,15 +43,32 @@ const packages = [
   },
 ] as const;
 
+type PackageSlug = (typeof packages)[number]["slug"];
+
 export default function Upgrade() {
-const handleCheckout = async (
-  slug: "small" | "medium" | "large",
-) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  await authClient.checkout({
-    slug,
-  });
-};
+  const [loadingSlug, setLoadingSlug] =
+    useState<PackageSlug | null>(null);
+
+  const handleCheckout = async (slug: PackageSlug) => {
+    if (loadingSlug) return;
+
+    try {
+      setLoadingSlug(slug);
+
+      await authClient.checkout({
+        slug,
+      });
+    } catch (error) {
+      console.error("CHECKOUT_START_FAILED", {
+        slug,
+        error,
+      });
+
+      toast.error("Unable to start checkout. Please try again.");
+
+      setLoadingSlug(null);
+    }
+  };
 
   return (
     <Dialog>
@@ -78,6 +98,7 @@ const handleCheckout = async (
             const Icon = pack.icon;
             const isPopular =
               "popular" in pack && pack.popular;
+            const isLoading = loadingSlug === pack.slug;
 
             return (
               <div
@@ -144,9 +165,12 @@ const handleCheckout = async (
                   }
                   size="sm"
                   variant={isPopular ? "default" : "outline"}
+                  disabled={loadingSlug !== null}
                   onClick={() => handleCheckout(pack.slug)}
                 >
-                  Buy {pack.name}
+                  {isLoading
+                    ? "Processing..."
+                    : `Buy ${pack.name}`}
                 </Button>
               </div>
             );
