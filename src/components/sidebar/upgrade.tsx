@@ -55,6 +55,8 @@ export default function Upgrade() {
     try {
       setLoadingSlug(slug);
 
+      // Polar checkout is added to Better Auth through the Polar plugin.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await authClient.checkout({
         slug,
       });
