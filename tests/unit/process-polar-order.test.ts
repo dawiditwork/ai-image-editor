@@ -183,4 +183,68 @@ describe("processPolarOrder", () => {
     expect(db.purchase.findUnique).not.toHaveBeenCalled();
     expect(db.$transaction).not.toHaveBeenCalled();
   });
+
+  it("throws when Polar order has no productId", async () => {
+    const order = {
+      id: "order-123",
+      productId: null,
+      customer: {
+        externalId: "user-1",
+      },
+    };
+
+    await expect(processPolarOrder(order)).rejects.toThrow(
+      "Polar order has no productId",
+    );
+  });
+
+  it("throws when Polar user does not exist", async () => {
+    vi.mocked(db.user.findUnique).mockResolvedValueOnce(null);
+
+    const order = {
+      id: "order-123",
+      productId: "2936d517-b6b8-4afa-8016-82508de848a9",
+      customer: {
+        externalId: "user-1",
+      },
+    };
+
+    await expect(processPolarOrder(order)).rejects.toThrow(
+      "No matching user found for Polar order",
+    );
+
+    expect(db.purchase.findUnique).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("rethrows unexpected transaction errors", async () => {
+    const unexpectedError = new Error("Database unavailable");
+
+    vi.mocked(db.user.findUnique).mockResolvedValueOnce({
+      id: "user-1",
+      name: "Dawid",
+      email: "test@example.com",
+      emailVerified: true,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      credits: 10,
+    });
+
+    vi.mocked(db.purchase.findUnique).mockResolvedValueOnce(null);
+
+    vi.mocked(db.$transaction).mockRejectedValueOnce(unexpectedError);
+
+    const order = {
+      id: "order-123",
+      productId: "2936d517-b6b8-4afa-8016-82508de848a9",
+      customer: {
+        externalId: "user-1",
+      },
+    };
+
+    await expect(processPolarOrder(order)).rejects.toThrow(
+      "Database unavailable",
+    );
+  });
 });
