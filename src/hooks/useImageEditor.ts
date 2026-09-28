@@ -157,10 +157,7 @@ export const useImageEditor = ({
     setProcessingText("Removing background...");
 
     try {
-      const creditResult = await deductCredits(
-        2,
-        "background removal",
-      );
+     const creditResult = await deductCredits("removeBackground");
 
       if (!creditResult.success) {
         toast.error(
@@ -210,7 +207,7 @@ export const useImageEditor = ({
     setProcessingText("Upscaling image...");
 
     try {
-      const creditResult = await deductCredits(1, "upscaling");
+      const creditResult = await deductCredits("upscale");
 
       if (!creditResult.success) {
         toast.error(

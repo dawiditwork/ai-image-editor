@@ -1,8 +1,9 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { headers } from "next/headers";
-
+import { CREDIT_COSTS } from "~/lib/credit-costs";
+import type { CreditOperation } from "~/lib/credit-costs";
 import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
 
@@ -149,20 +150,9 @@ export async function updateProjectTransformations(
   }
 }
 
-export async function deductCredits(
-  creditsToDeduct: number,
-  operation?: string,
-) {
+export async function deductCredits(operation: CreditOperation) {
   try {
-    if (
-      !Number.isInteger(creditsToDeduct) ||
-      creditsToDeduct <= 0
-    ) {
-      return {
-        success: false,
-        error: "Invalid credit amount",
-      };
-    }
+    const creditsToDeduct = CREDIT_COSTS[operation];
 
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -216,14 +206,10 @@ export async function deductCredits(
       success: true,
       remainingCredits: updatedUser.credits,
       operation,
+      deductedCredits: creditsToDeduct,
     };
   } catch (error) {
-    console.error(
-      `Credit deduction error${
-        operation ? ` for ${operation}` : ""
-      }:`,
-      error,
-    );
+    console.error(`Credit deduction error for ${operation}:`, error);
 
     return {
       success: false,

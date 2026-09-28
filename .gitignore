@@ -50,3 +50,5 @@ yarn-error.log*
 /test-results/
 # Sentry Config File
 .env.sentry-build-plugin
+# Coverage
+/coverage/
