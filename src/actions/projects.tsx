@@ -1,6 +1,6 @@
 "use server";
-
-import type { Prisma } from "@prisma/client";
+import { createProjectSchema } from "~/lib/project-schemas";
+import { updateProjectTransformationsSchema } from "~/lib/project-schemas";
 import { headers } from "next/headers";
 import { CREDIT_COSTS } from "~/lib/credit-costs";
 import type { CreditOperation } from "~/lib/credit-costs";
@@ -18,6 +18,17 @@ interface CreateProjectData {
 
 export async function createProject(data: CreateProjectData) {
   try {
+
+        const parsed = createProjectSchema.safeParse(data);
+
+        if (!parsed.success) {
+          return {
+            success: false,
+            error: "Invalid project data",
+          };
+        }
+
+
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -28,10 +39,10 @@ export async function createProject(data: CreateProjectData) {
 
     const project = await db.project.create({
       data: {
-        name: data.name ?? "Untitled Project",
-        imageUrl: data.imageUrl,
-        ImageKitId: data.imageKitId,
-        filePath: data.filePath,
+        name: parsed.data.name ?? "Untitled Project",
+        imageUrl: parsed.data.imageUrl,
+        ImageKitId: parsed.data.imageKitId,
+        filePath: parsed.data.filePath,
         userId: session.user.id,
         transformations: [],
       },
@@ -96,6 +107,18 @@ export async function updateProjectTransformations(
   transformations: Transformation[],
 ) {
   try {
+    const parsed = updateProjectTransformationsSchema.safeParse({
+      projectId,
+      transformations,
+    });
+
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid project data",
+      };
+    }
+
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -107,32 +130,22 @@ export async function updateProjectTransformations(
       };
     }
 
-    const project = await db.project.findFirst({
+    const result = await db.project.updateMany({
       where: {
-        id: projectId,
+        id: parsed.data.projectId,
         userId: session.user.id,
       },
-      select: {
-        id: true,
+      data: {
+        transformations: parsed.data.transformations,
       },
     });
 
-    if (!project) {
+    if (result.count === 0) {
       return {
         success: false,
         error: "Project not found",
       };
     }
-
-    await db.project.update({
-      where: {
-        id: projectId,
-      },
-      data: {
-        transformations:
-          transformations as unknown as Prisma.InputJsonValue,
-      },
-    });
 
     return {
       success: true,
