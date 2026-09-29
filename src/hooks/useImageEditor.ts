@@ -3,10 +3,14 @@
 import { useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  applyRemoveBackground,
+  applyUpscale,
+  applySmartCrop,
+  applyAiEdit,
+} from "~/actions/projects";
 
-import { deductCredits } from "~/actions/projects";
 import { env } from "~/env";
-
 import type {
   Transformation,
   UploadedImage,
@@ -16,12 +20,14 @@ interface UseImageEditorProps {
   uploadedImage: UploadedImage | null;
   imageRef: RefObject<HTMLImageElement | null>;
   setCredits: React.Dispatch<React.SetStateAction<number>>;
+  activeProjectId: string | null;
 }
 
 export const useImageEditor = ({
   uploadedImage,
   imageRef,
   setCredits,
+  activeProjectId,
 }: UseImageEditorProps) => {
   const router = useRouter();
 
@@ -157,36 +163,37 @@ export const useImageEditor = ({
     setProcessingText("Removing background...");
 
     try {
-     const creditResult = await deductCredits("removeBackground");
+    if (!activeProjectId) {
+  toast.error("Project not found");
+  setIsProcessing(false);
+  return;
+}
 
-      if (!creditResult.success) {
-        toast.error(
-          creditResult.error ?? "Failed to process payment",
-        );
-        setIsProcessing(false);
-        return;
-      }
+const result = await applyRemoveBackground(activeProjectId);
 
-      setTransformations((previousTransformations) => [
-        ...previousTransformations,
-        { aiRemoveBackground: true },
-      ]);
+if (!result.success) {
+  toast.error(
+    result.error ?? "Failed to remove background",
+  );
 
-      if (typeof creditResult.remainingCredits === "number") {
-        setCredits(creditResult.remainingCredits);
-      }
+  setIsProcessing(false);
+  return;
+}
 
-      toast.success(
-        `Background removed! ${creditResult.remainingCredits} credits remaining.`,
-      );
+setTransformations(result.transformations);
+setCredits(result.remainingCredits);
 
-      router.refresh();
-    } catch (error) {
-      console.error("Background removal error:", error);
-      toast.error("Failed to remove background");
-      setIsProcessing(false);
-    }
-  };
+toast.success(
+  `Background removed! ${result.remainingCredits} credits remaining.`,
+);
+
+router.refresh();
+} catch (error) {
+  console.error("Background removal error:", error);
+  toast.error("Failed to remove background");
+  setIsProcessing(false);
+}
+};
 
   const upscaleImage = async () => {
     if (!uploadedImage) return;
@@ -207,37 +214,37 @@ export const useImageEditor = ({
     setProcessingText("Upscaling image...");
 
     try {
-      const creditResult = await deductCredits("upscale");
+      
+    if (!activeProjectId) {
+  toast.error("Project not found");
+  setIsProcessing(false);
+  return;
+}
 
-      if (!creditResult.success) {
-        toast.error(
-          creditResult.error ?? "Failed to process payment",
-        );
-        setIsProcessing(false);
-        return;
-      }
+const result = await applyUpscale(activeProjectId);
 
-      setTransformations((previousTransformations) => [
-        ...previousTransformations,
-        { aiUpscale: true },
-      ]);
+if (!result.success) {
+  toast.error(
+    result.error ?? "Failed to upscale image",
+  );
+  setIsProcessing(false);
+  return;
+}
 
-      if (typeof creditResult.remainingCredits === "number") {
-        setCredits(creditResult.remainingCredits);
-      }
+setTransformations(result.transformations);
+setCredits(result.remainingCredits);
 
-      toast.success(
-        `Image upscaled! ${creditResult.remainingCredits} credits remaining.`,
-      );
+toast.success(
+  `Image upscaled! ${result.remainingCredits} credits remaining.`,
+);
 
-      router.refresh();
-    } catch (error) {
-      console.error("Upscaling error:", error);
-      toast.error("Failed to upscale image");
-      setIsProcessing(false);
-    }
-  };
-
+router.refresh();
+} catch (error) {
+  console.error("Upscaling error:", error);
+  toast.error("Failed to upscale image");
+  setIsProcessing(false);
+}
+};
   const objectCrop = async () => {
     if (!uploadedImage) return;
 
@@ -256,17 +263,34 @@ export const useImageEditor = ({
     setIsProcessing(true);
     setProcessingText("Applying smart crop...");
 
-    try {
-      setTransformations((previousTransformations) => [
-        ...previousTransformations,
-        {
-          raw: `fo-${encodeURIComponent(cleanInput)},ar-1-1`,
-        },
-      ]);
+ try {
+  if (!activeProjectId) {
+    toast.error("Project not found");
+    setIsProcessing(false);
+    return;
+  }
 
-      toast.success(
-        `Smart crop applied focusing on "${objectInput.trim()}"!`,
-      );
+  const result = await applySmartCrop(
+    activeProjectId,
+    cleanInput,
+  );
+
+  if (!result.success) {
+    toast.error(
+      result.error ?? "Failed to apply smart crop",
+    );
+    setIsProcessing(false);
+    return;
+  }
+
+  setTransformations(result.transformations);
+  setCredits(result.remainingCredits);
+
+  toast.success(
+    `Smart crop applied! ${result.remainingCredits} credits remaining.`,
+  );
+
+  router.refresh();
     } catch (error) {
       console.error("Object crop error:", error);
       toast.error("Failed to apply smart crop");
@@ -294,18 +318,34 @@ export const useImageEditor = ({
     setIsProcessing(true);
     setProcessingText("Applying AI edit...");
 
-    try {
-      setTransformations((previousTransformations) => [
-        ...previousTransformations.filter(
-          (transformation) =>
-            !transformation.raw?.startsWith("e-edit"),
-        ),
-        {
-          raw: `e-edit-prompt-${encodeURIComponent(cleanPrompt)}`,
-        },
-      ]);
+  try {
+  if (!activeProjectId) {
+    toast.error("Project not found");
+    setIsProcessing(false);
+    return;
+  }
 
-      toast.success("AI edit applied!");
+  const result = await applyAiEdit(
+    activeProjectId,
+    cleanPrompt,
+  );
+
+  if (!result.success) {
+    toast.error(
+      result.error ?? "Failed to apply AI edit",
+    );
+    setIsProcessing(false);
+    return;
+  }
+
+  setTransformations(result.transformations);
+  setCredits(result.remainingCredits);
+
+  toast.success(
+    `AI edit applied! ${result.remainingCredits} credits remaining.`,
+  );
+
+  router.refresh();
     } catch (error) {
       console.error("AI edit error:", error);
       toast.error("Failed to apply AI edit");

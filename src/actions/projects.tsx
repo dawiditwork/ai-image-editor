@@ -171,6 +171,517 @@ export async function updateProjectTransformations(
   }
 }
 
+
+export async function applyRemoveBackground(projectId: string) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.id) {
+      return {
+        success:  false as const,
+        error: "Unauthorized",
+      };
+    }
+
+    const result = await db.$transaction(async (tx) => {
+      const project = await tx.project.findFirst({
+        where: {
+          id: projectId,
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          transformations: true,
+        },
+      });
+
+      if (!project) {
+        return {
+          success: false as const,
+          error: "Project not found",
+        };
+      }
+
+      const parsed = updateProjectTransformationsSchema.safeParse({
+        projectId: project.id,
+        transformations: Array.isArray(project.transformations)
+          ? project.transformations
+          : [],
+      });
+
+      if (!parsed.success) {
+        throw new Error("Invalid stored project transformations");
+      }
+
+      const alreadyApplied = parsed.data.transformations.some(
+        (transformation) => transformation.aiRemoveBackground,
+      );
+
+      if (alreadyApplied) {
+        return {
+          success: false as const,
+          error: "Background removal already applied",
+        };
+      }
+
+      const creditCost = CREDIT_COSTS.removeBackground;
+
+      const creditResult = await tx.user.updateMany({
+        where: {
+          id: session.user.id,
+          credits: {
+            gte: creditCost,
+          },
+        },
+        data: {
+          credits: {
+            decrement: creditCost,
+          },
+        },
+      });
+
+      if (creditResult.count === 0) {
+        return {
+          success: false as const,
+          error: "Insufficient credits",
+        };
+      }
+
+      const nextTransformations = [
+        ...parsed.data.transformations,
+        {
+          aiRemoveBackground: true as const,
+        },
+      ];
+
+      await tx.project.update({
+        where: {
+          id: project.id,
+        },
+        data: {
+          transformations: nextTransformations,
+        },
+      });
+
+      const updatedUser = await tx.user.findUnique({
+        where: {
+          id: session.user.id,
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new Error("User not found after credit deduction");
+      }
+
+      return {
+        success: true as const,
+        remainingCredits: updatedUser.credits,
+        transformations: nextTransformations,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Remove background processing error:", error);
+
+    return {
+      success: false as const,
+      error: "Failed to apply background removal",
+    };
+  }
+}
+export async function applyUpscale(projectId: string) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.id) {
+      return {
+        success: false as const,
+        error: "Unauthorized",
+      };
+    }
+
+    const result = await db.$transaction(async (tx) => {
+      const project = await tx.project.findFirst({
+        where: {
+          id: projectId,
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          transformations: true,
+        },
+      });
+
+      if (!project) {
+        return {
+          success: false as const,
+          error: "Project not found",
+        };
+      }
+
+      const parsed = updateProjectTransformationsSchema.safeParse({
+        projectId: project.id,
+        transformations: Array.isArray(project.transformations)
+          ? project.transformations
+          : [],
+      });
+
+      if (!parsed.success) {
+        throw new Error("Invalid stored project transformations");
+      }
+
+      const alreadyApplied = parsed.data.transformations.some(
+        (transformation) => transformation.aiUpscale,
+      );
+
+      if (alreadyApplied) {
+        return {
+          success: false as const,
+          error: "Upscale already applied",
+        };
+      }
+
+      const creditCost = CREDIT_COSTS.upscale;
+
+      const creditResult = await tx.user.updateMany({
+        where: {
+          id: session.user.id,
+          credits: {
+            gte: creditCost,
+          },
+        },
+        data: {
+          credits: {
+            decrement: creditCost,
+          },
+        },
+      });
+
+      if (creditResult.count === 0) {
+        return {
+          success: false as const,
+          error: "Insufficient credits",
+        };
+      }
+
+      const nextTransformations = [
+        ...parsed.data.transformations,
+        {
+          aiUpscale: true as const,
+        },
+      ];
+
+      await tx.project.update({
+        where: {
+          id: project.id,
+        },
+        data: {
+          transformations: nextTransformations,
+        },
+      });
+
+      const updatedUser = await tx.user.findUnique({
+        where: {
+          id: session.user.id,
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new Error("User not found after credit deduction");
+      }
+
+      return {
+        success: true as const,
+        remainingCredits: updatedUser.credits,
+        transformations: nextTransformations,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Upscale processing error:", error);
+
+    return {
+      success: false as const,
+      error: "Failed to apply upscale",
+    };
+  }
+}
+export async function applySmartCrop(
+  projectId: string,
+  objectInput: string,
+) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.id) {
+      return {
+        success: false as const,
+        error: "Unauthorized",
+      };
+    }
+
+    const cleanInput = objectInput.trim().toLowerCase();
+
+    if (!cleanInput) {
+      return {
+        success: false as const,
+        error: "Invalid object",
+      };
+    }
+
+    const result = await db.$transaction(async (tx) => {
+      const project = await tx.project.findFirst({
+        where: {
+          id: projectId,
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          transformations: true,
+        },
+      });
+
+      if (!project) {
+        return {
+          success: false as const,
+          error: "Project not found",
+        };
+      }
+
+      const parsed = updateProjectTransformationsSchema.safeParse({
+        projectId: project.id,
+        transformations: Array.isArray(project.transformations)
+          ? project.transformations
+          : [],
+      });
+
+      if (!parsed.success) {
+        throw new Error("Invalid stored project transformations");
+      }
+
+      const alreadyApplied = parsed.data.transformations.some(
+        (transformation) =>
+          transformation.raw?.includes("fo-") &&
+          transformation.raw.includes("ar-1-1"),
+      );
+
+      if (alreadyApplied) {
+        return {
+          success: false as const,
+          error: "Smart crop already applied",
+        };
+      }
+
+      const creditCost = CREDIT_COSTS.smartCrop;
+
+      const creditResult = await tx.user.updateMany({
+        where: {
+          id: session.user.id,
+          credits: {
+            gte: creditCost,
+          },
+        },
+        data: {
+          credits: {
+            decrement: creditCost,
+          },
+        },
+      });
+
+      if (creditResult.count === 0) {
+        return {
+          success: false as const,
+          error: "Insufficient credits",
+        };
+      }
+
+      const nextTransformations = [
+        ...parsed.data.transformations,
+        {
+          raw: `fo-${encodeURIComponent(cleanInput)},ar-1-1`,
+        },
+      ];
+
+      await tx.project.update({
+        where: {
+          id: project.id,
+        },
+        data: {
+          transformations: nextTransformations,
+        },
+      });
+
+      const updatedUser = await tx.user.findUnique({
+        where: {
+          id: session.user.id,
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new Error("User not found after credit deduction");
+      }
+
+      return {
+        success: true as const,
+        remainingCredits: updatedUser.credits,
+        transformations: nextTransformations,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Smart crop processing error:", error);
+
+    return {
+      success: false as const,
+      error: "Failed to apply smart crop",
+    };
+  }
+}
+export async function applyAiEdit(
+  projectId: string,
+  prompt: string,
+) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.id) {
+      return {
+        success: false as const,
+        error: "Unauthorized",
+      };
+    }
+
+    const cleanPrompt = prompt.trim();
+
+    if (!cleanPrompt) {
+      return {
+        success: false as const,
+        error: "Invalid prompt",
+      };
+    }
+
+    const result = await db.$transaction(async (tx) => {
+      const project = await tx.project.findFirst({
+        where: {
+          id: projectId,
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          transformations: true,
+        },
+      });
+
+      if (!project) {
+        return {
+          success: false as const,
+          error: "Project not found",
+        };
+      }
+
+      const parsed = updateProjectTransformationsSchema.safeParse({
+        projectId: project.id,
+        transformations: Array.isArray(project.transformations)
+          ? project.transformations
+          : [],
+      });
+
+      if (!parsed.success) {
+        throw new Error("Invalid stored project transformations");
+      }
+
+      const creditCost = CREDIT_COSTS.aiEdit;
+
+      const creditResult = await tx.user.updateMany({
+        where: {
+          id: session.user.id,
+          credits: {
+            gte: creditCost,
+          },
+        },
+        data: {
+          credits: {
+            decrement: creditCost,
+          },
+        },
+      });
+
+      if (creditResult.count === 0) {
+        return {
+          success: false as const,
+          error: "Insufficient credits",
+        };
+      }
+
+      const nextTransformations = [
+        ...parsed.data.transformations.filter(
+          (transformation) =>
+            !transformation.raw?.startsWith("e-edit"),
+        ),
+        {
+          raw: `e-edit-prompt-${encodeURIComponent(cleanPrompt)}`,
+        },
+      ];
+
+      await tx.project.update({
+        where: {
+          id: project.id,
+        },
+        data: {
+          transformations: nextTransformations,
+        },
+      });
+
+      const updatedUser = await tx.user.findUnique({
+        where: {
+          id: session.user.id,
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new Error("User not found after credit deduction");
+      }
+
+      return {
+        success: true as const,
+        remainingCredits: updatedUser.credits,
+        transformations: nextTransformations,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error("AI edit processing error:", error);
+
+    return {
+      success: false as const,
+      error: "Failed to apply AI edit",
+    };
+  }
+}
 export async function deductCredits(operation: CreditOperation) {
   try {
     const creditsToDeduct = CREDIT_COSTS[operation];

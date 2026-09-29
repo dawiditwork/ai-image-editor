@@ -66,6 +66,7 @@ export default function CreatePage() {
   uploadedImage,
   imageRef,
   setCredits,
+  activeProjectId,
 })
 const {
   isLoadingProjects,
