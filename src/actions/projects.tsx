@@ -36,6 +36,14 @@ export async function createProject(data: CreateProjectData) {
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
+    const expectedPathPrefix = `/ai-image-editor/${session.user.id}/`;
+
+      if (!parsed.data.filePath.startsWith(expectedPathPrefix)) {
+        return {
+          success: false,
+          error: "Invalid file ownership",
+        };
+}
 
     const project = await db.project.create({
       data: {

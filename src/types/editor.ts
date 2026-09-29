@@ -33,6 +33,7 @@ export interface UploadAuthResponse {
   expire: number;
   token: string;
   publicKey: string;
+  userId: string;
 }
 
 export type EditorMode = "home" | "editor" | "pdf";

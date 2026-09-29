@@ -84,7 +84,7 @@ export const useImageUpload = ({
       const result = await upload({
         file,
         fileName: file.name,
-        folder: "/ai-image-editor",
+        folder: `/ai-image-editor/${authParams.userId}`,
         ...authParams,
       });
 
