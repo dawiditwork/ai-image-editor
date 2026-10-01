@@ -387,6 +387,7 @@ export const useImageEditor = ({
     }
   };
   const clearTransformations = () => {
+    setPendingPaidTransformation(null);
     setTransformations([]);
     toast.success("All transformations cleared!");
   };
