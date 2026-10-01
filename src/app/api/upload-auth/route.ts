@@ -28,6 +28,7 @@ export async function GET() {
       signature,
       publicKey: env.IMAGEKIT_PUBLIC_KEY,
       urlEndpoint: env.IMAGEKIT_URL_ENDPOINT,
+      userId: session.user.id,
     });
   } catch (error) {
     console.error("Upload auth error:", error);

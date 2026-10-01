@@ -8,7 +8,7 @@ import {
   applyUpscale,
   applySmartCrop,
   applyAiEdit,
-} from "~/actions/projects";
+} from "~/actions/project-ai";
 
 import { env } from "~/env";
 import type {
