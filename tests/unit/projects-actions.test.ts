@@ -21,13 +21,15 @@ vi.mock("~/server/db", () => ({
 }));
 
 import { headers } from "next/headers";
-import { auth } from "~/lib/auth";
+
 import {
   applyAiEdit,
   applyRemoveBackground,
   applySmartCrop,
   applyUpscale,
+  undoPaidTransformation,
 } from "~/actions/project-ai";
+import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
 
 const tx = {
@@ -38,6 +40,7 @@ const tx = {
   user: {
     updateMany: vi.fn(),
     findUnique: vi.fn(),
+    update: vi.fn(),
   },
 };
 
@@ -499,6 +502,303 @@ describe("project AI actions", () => {
         success: true,
         remainingCredits: 5,
         transformations: expectedTransformations,
+      });
+    });
+  });
+
+  describe("undoPaidTransformation", () => {
+    it("returns Unauthorized when user is not logged in", async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null);
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "Unauthorized",
+      });
+
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("returns Project not found when project does not exist or belongs to another user", async () => {
+      tx.project.findFirst.mockResolvedValue(null);
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "Project not found",
+      });
+
+      expect(tx.project.update).not.toHaveBeenCalled();
+      expect(tx.user.update).not.toHaveBeenCalled();
+    });
+
+    it("does not refund credits when transformation does not exist", async () => {
+      mockProject();
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "Transformation not found",
+      });
+
+      expect(tx.project.update).not.toHaveBeenCalled();
+      expect(tx.user.update).not.toHaveBeenCalled();
+    });
+
+    it("removes background transformation and refunds credits", async () => {
+      mockProject([
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          aiUpscale: true,
+        },
+      ]);
+
+      tx.project.update.mockResolvedValue({});
+
+      tx.user.update.mockResolvedValue({
+        credits: 10,
+      });
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(tx.project.update).toHaveBeenCalledWith({
+        where: {
+          id: "project-1",
+        },
+        data: {
+          transformations: [
+            {
+              aiUpscale: true,
+            },
+          ],
+        },
+      });
+
+      expect(tx.user.update).toHaveBeenCalledWith({
+        where: {
+          id: "user-1",
+        },
+        data: {
+          credits: {
+            increment: expect.any(Number),
+          },
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      expect(result).toEqual({
+        success: true,
+        transformations: [
+          {
+            aiUpscale: true,
+          },
+        ],
+        remainingCredits: 10,
+        refundedCredits: expect.any(Number),
+      });
+    });
+
+    it("removes upscale transformation and refunds credits", async () => {
+      mockProject([
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          aiUpscale: true,
+        },
+      ]);
+
+      tx.project.update.mockResolvedValue({});
+
+      tx.user.update.mockResolvedValue({
+        credits: 11,
+      });
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "upscale",
+      );
+
+      expect(tx.project.update).toHaveBeenCalledWith({
+        where: {
+          id: "project-1",
+        },
+        data: {
+          transformations: [
+            {
+              aiRemoveBackground: true,
+            },
+          ],
+        },
+      });
+
+      expect(tx.user.update).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual({
+        success: true,
+        transformations: [
+          {
+            aiRemoveBackground: true,
+          },
+        ],
+        remainingCredits: 11,
+        refundedCredits: expect.any(Number),
+      });
+    });
+
+    it("removes smart crop transformation and keeps other transformations", async () => {
+      mockProject([
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          raw: "fo-car,ar-1-1",
+        },
+        {
+          aiUpscale: true,
+        },
+      ]);
+
+      tx.project.update.mockResolvedValue({});
+
+      tx.user.update.mockResolvedValue({
+        credits: 12,
+      });
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "objectCrop",
+      );
+
+      const expectedTransformations = [
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          aiUpscale: true,
+        },
+      ];
+
+      expect(tx.project.update).toHaveBeenCalledWith({
+        where: {
+          id: "project-1",
+        },
+        data: {
+          transformations: expectedTransformations,
+        },
+      });
+
+      expect(tx.user.update).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual({
+        success: true,
+        transformations: expectedTransformations,
+        remainingCredits: 12,
+        refundedCredits: expect.any(Number),
+      });
+    });
+
+    it("removes AI edit transformation and keeps other transformations", async () => {
+      mockProject([
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          raw: "e-edit-prompt-make%20sky%20blue",
+        },
+        {
+          aiUpscale: true,
+        },
+      ]);
+
+      tx.project.update.mockResolvedValue({});
+
+      tx.user.update.mockResolvedValue({
+        credits: 13,
+      });
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "aiEdit",
+      );
+
+      const expectedTransformations = [
+        {
+          aiRemoveBackground: true,
+        },
+        {
+          aiUpscale: true,
+        },
+      ];
+
+      expect(tx.project.update).toHaveBeenCalledWith({
+        where: {
+          id: "project-1",
+        },
+        data: {
+          transformations: expectedTransformations,
+        },
+      });
+
+      expect(tx.user.update).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual({
+        success: true,
+        transformations: expectedTransformations,
+        remainingCredits: 13,
+        refundedCredits: expect.any(Number),
+      });
+    });
+
+    it("prevents double refund when transformation no longer exists", async () => {
+      mockProject([]);
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "Transformation not found",
+      });
+
+      expect(tx.project.update).not.toHaveBeenCalled();
+      expect(tx.user.update).not.toHaveBeenCalled();
+    });
+
+    it("returns safe error when transaction fails", async () => {
+      vi.mocked(db.$transaction).mockRejectedValue(
+        new Error("Database unavailable"),
+      );
+
+      const result = await undoPaidTransformation(
+        "project-1",
+        "background",
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "Failed to undo transformation",
       });
     });
   });

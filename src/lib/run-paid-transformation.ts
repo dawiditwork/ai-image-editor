@@ -1,9 +1,9 @@
+import type { Prisma } from "@prisma/client";
 import { CREDIT_COSTS } from "~/lib/credit-costs";
 import type { CreditOperation } from "~/lib/credit-costs";
 import { updateProjectTransformationsSchema } from "~/lib/project-schemas";
 import { db } from "~/server/db";
 import type { Transformation } from "~/types/editor";
-import { Prisma } from "@prisma/client";
 
 type BuildTransformationResult =
   | {
@@ -58,9 +58,10 @@ export async function runPaidTransformation({
       throw new Error("Invalid stored project transformations");
     }
 
-   const transformationResult = buildTransformations(
-  parsed.data.transformations,
-);
+    const transformationResult = buildTransformations(
+      parsed.data.transformations,
+    );
+
     if (!transformationResult.success) {
       return {
         success: false as const,
@@ -90,15 +91,16 @@ export async function runPaidTransformation({
         error: "Insufficient credits",
       };
     }
-await tx.project.update({
-  where: {
-    id: project.id,
-  },
-  data: {
-    transformations:
-      transformationResult.transformations as unknown as Prisma.InputJsonValue,
-  },
-});
+
+    await tx.project.update({
+      where: {
+        id: project.id,
+      },
+      data: {
+        transformations:
+          transformationResult.transformations as unknown as Prisma.InputJsonValue,
+      },
+    });
 
     const updatedUser = await tx.user.findUnique({
       where: {

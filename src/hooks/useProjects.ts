@@ -16,21 +16,14 @@ interface UseProjectsProps {
   setUploadedImage: React.Dispatch<
     React.SetStateAction<UploadedImage | null>
   >;
-
   setTransformations: React.Dispatch<
     React.SetStateAction<Transformation[]>
   >;
-
-  setMode: React.Dispatch<
-    React.SetStateAction<EditorMode>
-  >;
-
-  setCredits: React.Dispatch<
-    React.SetStateAction<number>
-  >;
+  setMode: React.Dispatch<React.SetStateAction<EditorMode>>;
+  setCredits: React.Dispatch<React.SetStateAction<number>>;
   setActiveProjectId: React.Dispatch<
-  React.SetStateAction<string | null>
->;
+    React.SetStateAction<string | null>
+  >;
 }
 
 export const useProjects = ({
@@ -41,12 +34,9 @@ export const useProjects = ({
   setActiveProjectId,
 }: UseProjectsProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingProjects, setIsLoadingProjects] =
-    useState(true);
-
-  const [userProjects, setUserProjects] = useState<Project[]>(
-    [],
-  );
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [isOpeningProject, setIsOpeningProject] = useState(false);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -67,17 +57,11 @@ export const useProjects = ({
 
         const projectsResult = await getUserProjects();
 
-        if (
-          projectsResult.success &&
-          projectsResult.projects
-        ) {
+        if (projectsResult.success && projectsResult.projects) {
           setUserProjects(projectsResult.projects);
         }
       } catch (error) {
-        console.error(
-          "Failed to initialize project data:",
-          error,
-        );
+        console.error("Failed to initialize project data:", error);
       } finally {
         setIsLoading(false);
         setIsLoadingProjects(false);
@@ -88,23 +72,29 @@ export const useProjects = ({
   }, [setCredits]);
 
   useEffect(() => {
-    if (isLoadingProjects) return;
     if (typeof window === "undefined") return;
 
-    const params = new URLSearchParams(
-      window.location.search,
-    );
-
+    const params = new URLSearchParams(window.location.search);
     const projectId = params.get("projectId");
 
-    if (!projectId) return;
+    if (!projectId) {
+      setIsOpeningProject(false);
+      return;
+    }
+
+    if (isLoadingProjects) {
+      setIsOpeningProject(true);
+      return;
+    }
 
     const project = userProjects.find(
-      (currentProject) =>
-        currentProject.id === projectId,
+      (currentProject) => currentProject.id === projectId,
     );
 
-    if (!project) return;
+    if (!project) {
+      setIsOpeningProject(false);
+      return;
+    }
 
     setUploadedImage({
       fileId: project.ImageKitId,
@@ -116,6 +106,7 @@ export const useProjects = ({
     setActiveProjectId(project.id);
     setTransformations(project.transformations ?? []);
     setMode("editor");
+    setIsOpeningProject(false);
   }, [
     isLoadingProjects,
     userProjects,
@@ -128,6 +119,7 @@ export const useProjects = ({
   return {
     isLoading,
     isLoadingProjects,
+    isOpeningProject,
     userProjects,
     setUserProjects,
   };

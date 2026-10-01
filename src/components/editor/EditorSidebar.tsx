@@ -1,9 +1,7 @@
 "use client";
-
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-
 import {
   Scissors,
   Expand,
@@ -14,35 +12,26 @@ import {
   Upload,
   X,
 } from "lucide-react";
-
 interface EditorSidebarProps {
   credits: number;
   aiUnavailable: boolean;
   isProcessing: boolean;
   transformations: unknown[];
-
   objectInput: string;
   setObjectInput: (value: string) => void;
-
   aiEditPrompt: string;
   setAiEditPrompt: (value: string) => void;
-
   resizeWidth: string;
   setResizeWidth: (value: string) => void;
-
   resizeHeight: string;
   setResizeHeight: (value: string) => void;
-
   pdfImages: File[];
   setPdfImages: React.Dispatch<React.SetStateAction<File[]>>;
-
     getRootProps: () => React.HTMLAttributes<HTMLElement>;
     getInputProps: () => React.InputHTMLAttributes<HTMLInputElement>;
   isDragActive: boolean;
-
   hasTransformation: (type: string) => boolean;
   removeTransformation: (type: string) => void;
-
   removeBackground: () => void;
   upscaleImage: () => void;
   objectCrop: () => void;
@@ -84,7 +73,6 @@ export default function EditorSidebar({
   generateMultiPdf,
 }: EditorSidebarProps) {
   return (
-    
                <Card className="shadow-lg">
                             <CardContent className="p-5">
                               <div className="mb-3 flex items-start justify-between">
@@ -111,7 +99,6 @@ export default function EditorSidebar({
                                   </p>
                                 </div>
                               </div>
-        
                               <div className="space-y-2">
                                 <div className="grid gap-2 sm:grid-cols-1">
                                   <div className="group relative">
@@ -153,7 +140,6 @@ export default function EditorSidebar({
                                       </Button>
                                     )}
                                   </div>
-        
                                   <div className="group relative">
                                     <Button
                                       onClick={upscaleImage}
@@ -192,7 +178,6 @@ export default function EditorSidebar({
                                     )}
                                   </div>
                                 </div>
-        
                                 <div className="rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-2">
                                   {/* Smart Object Crop Section */}
                                   <div className="space-y-2">
@@ -207,7 +192,6 @@ export default function EditorSidebar({
                                         <p className="text-xs text-green-700">1 credit</p>
                                       </div>
                                     </div>
-        
                                     <Input
                                       placeholder="Enter object (e.g., person, car)"
                                       value={objectInput}
@@ -219,13 +203,11 @@ export default function EditorSidebar({
                                       }
                                       className="h-7 border-green-200 bg-white text-xs focus:border-green-400 focus:ring-green-400"
                                     />
-        
                                     <div className="rounded-md border border-green-200 bg-green-100/50 p-1.5">
                                       <p className="text-xs text-green-800">
                                         ✨ AI crops around specified object in 1:1 ratio
                                       </p>
                                     </div>
-        
                                     <div className="flex gap-1">
                                       <Button
                                         onClick={objectCrop}
@@ -263,45 +245,59 @@ export default function EditorSidebar({
                                     </div>
                                   </div>
                                 </div>
-        
                                         <div className="rounded-lg border border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50 p-2">
-                                        <div className="space-y-2">
-                                          <div>
-                                            <h4 className="text-xs font-bold text-indigo-900">
-                                              Magic AI Edit
-                                            </h4>
-                                            <p className="text-xs text-indigo-700">2 credits</p>
-                                          </div>
-        
-                                          <Input
-                                            placeholder="e.g. Remove the person, add snow..."
-                                            value={aiEditPrompt}
-                                            onChange={(e) => setAiEditPrompt(e.target.value)}
-                                            disabled={isProcessing}
-                                            className="h-7 border-indigo-200 bg-white text-xs"
-                                          />
-        
-                                          <div className="rounded-md border border-indigo-200 bg-indigo-100/50 p-1.5">
-                                            <p className="text-xs text-indigo-800">
-                                              ✨ Describe what you want AI to change
-                                            </p>
-                                          </div>
-        
-                                          <Button
-                                            onClick={aiEdit}
-                                            disabled={
-                                              aiUnavailable ||
-                                              isProcessing || !aiEditPrompt.trim()}
-                                            size="sm"
-                                            className="h-7 w-full bg-indigo-600 text-white hover:bg-indigo-700"
-                                          >
-                                            {isProcessing ? "Processing..." : "Apply AI Edit"}
-                                          </Button>
-                                        </div>
-        </div>
-        
-        
-                                {/* Format Converter */}
+  <div className="space-y-2">
+    <div>
+      <h4 className="text-xs font-bold text-indigo-900">
+        Magic AI Edit
+      </h4>
+      <p className="text-xs text-indigo-700">2 credits</p>
+    </div>
+    <Input
+      placeholder="e.g. Remove the person, add snow..."
+      value={aiEditPrompt}
+      onChange={(e) => setAiEditPrompt(e.target.value)}
+      disabled={isProcessing || hasTransformation("aiEdit")}
+      className="h-7 border-indigo-200 bg-white text-xs"
+    />
+    <div className="rounded-md border border-indigo-200 bg-indigo-100/50 p-1.5">
+      <p className="text-xs text-indigo-800">
+        ✨ Describe what you want AI to change
+      </p>
+    </div>
+    <div className="flex gap-1">
+      <Button
+        onClick={aiEdit}
+        disabled={
+          aiUnavailable ||
+          isProcessing ||
+          !aiEditPrompt.trim() ||
+          hasTransformation("aiEdit")
+        }
+        size="sm"
+        className="h-7 flex-1 bg-indigo-600 text-white hover:bg-indigo-700"
+      >
+        {isProcessing
+          ? "Processing..."
+          : hasTransformation("aiEdit")
+            ? "Applied ✓"
+            : "Apply AI Edit"}
+      </Button>
+      {hasTransformation("aiEdit") && (
+        <Button
+          onClick={() => removeTransformation("aiEdit")}
+          disabled={isProcessing}
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 border-red-200 p-0 text-red-600 hover:bg-red-50"
+        >
+          <Minus className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  </div>
+</div>
+{/* Format Converter */}
                                 <div className="rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 p-2">
                                   <div className="space-y-2">
                                     <div>
@@ -310,7 +306,6 @@ export default function EditorSidebar({
                                       </h4>
                                       <p className="text-xs text-blue-700">FREE</p>
                                     </div>
-        
                                     <div className="grid grid-cols-3 gap-1">
                                       <Button
                                         size="sm"
@@ -319,7 +314,6 @@ export default function EditorSidebar({
                                       >
                                         JPG
                                       </Button>
-        
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -327,7 +321,6 @@ export default function EditorSidebar({
                                       >
                                         PNG
                                       </Button>
-        
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -338,8 +331,6 @@ export default function EditorSidebar({
                                     </div>
                                   </div>
                                 </div>
-        
-        
                                 <div className="rounded-lg border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-2">
                                 <div className="space-y-2">
                                   <div>
@@ -348,7 +339,6 @@ export default function EditorSidebar({
                                     </h4>
                                     <p className="text-xs text-purple-700">FREE</p>
                                   </div>
-        
                                   <div className="grid grid-cols-2 gap-1">
                                     <Input
                                       type="number"
@@ -358,7 +348,6 @@ export default function EditorSidebar({
                                       disabled={isProcessing}
                                       className="h-7 text-xs"
                                     />
-        
                                     <Input
                                       type="number"
                                       placeholder="Height"
@@ -368,7 +357,6 @@ export default function EditorSidebar({
                                       className="h-7 text-xs"
                                     />
                                   </div>
-        
                                   <div className="flex gap-1">
                                     <Button
                                       onClick={applyResize}
@@ -385,7 +373,6 @@ export default function EditorSidebar({
                                         ? "Applied ✓"
                                         : "Resize"}
                                     </Button>
-        
                                     {hasTransformation("resize") && (
                                       <Button
                                         onClick={() => removeTransformation("resize")}
@@ -399,11 +386,6 @@ export default function EditorSidebar({
                                   </div>
                                 </div>
                               </div>
-                                      
-        
-                      
-        
-        
                               <div className="rounded-lg border border-teal-200 bg-gradient-to-r from-teal-50 to-cyan-50 p-2">
                               <div className="space-y-2">
                                 <div>
@@ -412,14 +394,11 @@ export default function EditorSidebar({
                                   </h4>
                                   <p className="text-xs text-teal-700">FREE</p>
                                 </div>
-        
                                 <div className="rounded-md border border-teal-200 bg-teal-100/50 p-1.5">
                                   <p className="text-xs text-teal-800">
                                     📚 Combine multiple images into one PDF
                                   </p>
                                 </div>
-        
-                              
                                 <div className="space-y-2">
                                   <div
                                     {...getRootProps()}
@@ -434,18 +413,14 @@ export default function EditorSidebar({
                                     `}
                                   >
                                     <input {...getInputProps()} />
-        
                                     <Upload className="mx-auto mb-2 h-8 w-8 text-teal-600" />
-        
                                     <p className="font-medium">
                                       Drag & Drop images here
                                     </p>
-        
                                     <p className="text-xs opacity-70">
                                       or click to select files
                                     </p>
                                   </div>
-        
                                   {pdfImages.length > 0 && (
                                     <div className="space-y-1">
                                       {pdfImages.map((file, index) => (
@@ -454,7 +429,6 @@ export default function EditorSidebar({
                                           className="flex items-center justify-between rounded border p-2 text-xs"
                                         >
                                           <span className="truncate">{file.name}</span>
-        
                                           <Button
                                             size="sm"
                                             variant="ghost"
@@ -470,11 +444,9 @@ export default function EditorSidebar({
                                       ))}
                                     </div>
                                   )}
-        
                                   <div className="text-center text-xs text-teal-700">
                                     {pdfImages.length} image(s) selected
                                   </div>
-        
                                   <Button
                                     onClick={generateMultiPdf}
                                     disabled={pdfImages.length === 0}
@@ -486,8 +458,6 @@ export default function EditorSidebar({
                                 </div>
                                 </div> {/* zamyka wewnętrzne space-y-2 */}
                                 </div> {/* zamyka zewnętrzne space-y-2 */}
-        
-        
                                 {transformations.length > 0 && (
                                   <div className="py-1 text-center">
                                     <div className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
@@ -498,9 +468,7 @@ export default function EditorSidebar({
                                     </div>
                                   </div>
                                 )}
-        
                                 {transformations.length > 0 && (
-                                
                                   <Button
                                     onClick={clearTransformations}
                                     disabled={isProcessing}
@@ -512,9 +480,7 @@ export default function EditorSidebar({
                                     <span className="text-xs">Clear All</span>
                                   </Button>
                                 )}
-        
                                 <div className="flex gap-2 border-t pt-2">                          
-          
                                   {transformations.length > 0 && (
                                     <>  
                                     <Button
@@ -525,15 +491,11 @@ export default function EditorSidebar({
                                       <Download className="h-3 w-3" />
                                       <span className="text-xs">Download</span>
                                     </Button>
-                                  
-        
                                       </>
-        
                                   )}
                                 </div>
                               </div>
                             </CardContent>
                           </Card>
-    
   );
 }
