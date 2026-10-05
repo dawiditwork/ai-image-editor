@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { getCreditsForProduct } from "~/lib/polar-credits";
+import { getProductForPolarId } from "~/lib/polar-credits";
 import { db } from "~/server/db";
 
 type PolarOrderInput = {
@@ -15,14 +15,15 @@ export async function processPolarOrder(order: PolarOrderInput) {
   const polarOrderId = order.id;
   const productId = order.productId;
   const externalCustomerId = order.customer.externalId;
-  
-if (!productId) {
-  console.error("POLAR_MISSING_PRODUCT_ID", {
-    orderId: polarOrderId,
-  });
 
-  throw new Error("Polar order has no productId");
-}
+  if (!productId) {
+    console.error("POLAR_MISSING_PRODUCT_ID", {
+      orderId: polarOrderId,
+    });
+
+    throw new Error("Polar order has no productId");
+  }
+
   console.log("POLAR_ORDER_RECEIVED", {
     polarOrderId,
     productId,
@@ -52,9 +53,9 @@ if (!productId) {
     throw new Error("No matching user found for Polar order");
   }
 
-  const creditsToAdd = getCreditsForProduct(productId);
+  const product = getProductForPolarId(productId);
 
-  if (creditsToAdd === null) {
+  if (!product) {
     console.error("POLAR_UNKNOWN_PRODUCT", {
       orderId: polarOrderId,
       productId,
@@ -83,7 +84,11 @@ if (!productId) {
         data: {
           polarOrderId,
           userId: user.id,
-          credits: creditsToAdd,
+          credits: product.credits,
+          packageName: product.packageName,
+          amount: product.amount,
+          currency: product.currency,
+          status: "paid",
         },
       }),
 
@@ -93,7 +98,7 @@ if (!productId) {
         },
         data: {
           credits: {
-            increment: creditsToAdd,
+            increment: product.credits,
           },
         },
       }),
@@ -102,7 +107,10 @@ if (!productId) {
     console.log("POLAR_ORDER_PROCESSED", {
       polarOrderId,
       userId: user.id,
-      creditsAdded: creditsToAdd,
+      creditsAdded: product.credits,
+      packageName: product.packageName,
+      amount: product.amount,
+      currency: product.currency,
     });
   } catch (error) {
     if (

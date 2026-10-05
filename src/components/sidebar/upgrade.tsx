@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Crown, Sparkles, Zap } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "~/lib/auth-client";
@@ -45,7 +45,17 @@ const packages = [
 
 type PackageSlug = (typeof packages)[number]["slug"];
 
-export default function Upgrade() {
+interface UpgradeProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}
+
+export default function Upgrade({
+  open,
+  onOpenChange,
+  showTrigger = true,
+}: UpgradeProps) {
   const [loadingSlug, setLoadingSlug] =
     useState<PackageSlug | null>(null);
 
@@ -67,22 +77,23 @@ export default function Upgrade() {
       });
 
       toast.error("Unable to start checkout. Please try again.");
-
       setLoadingSlug(null);
     }
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="hover:border-violet-500/50 hover:bg-violet-500/5 w-full justify-start gap-2 transition-colors"
-        >
-          <Crown className="h-4 w-4 text-violet-600" />
-          Buy Credits
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            className="hover:border-violet-500/50 hover:bg-violet-500/5 w-full justify-start gap-2 transition-colors"
+          >
+            <Crown className="h-4 w-4 text-violet-600" />
+            Buy Credits
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="w-[95vw] max-w-[680px] p-5 sm:max-w-[680px]">
         <DialogHeader>

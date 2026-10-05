@@ -3,8 +3,10 @@
 import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getProductForPolarId } from "~/lib/polar-credits";
+
 vi.mock("~/lib/polar-credits", () => ({
-  getCreditsForProduct: vi.fn(),
+  getProductForPolarId: vi.fn(),
 }));
 
 vi.mock("~/server/db", () => ({
@@ -21,7 +23,6 @@ vi.mock("~/server/db", () => ({
   },
 }));
 
-import { getCreditsForProduct } from "~/lib/polar-credits";
 import { processPolarOrder } from "~/lib/process-polar-order";
 import { db } from "~/server/db";
 
@@ -29,8 +30,12 @@ describe("processPolarOrder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // domyślnie znany produkt = 50 credits
-    vi.mocked(getCreditsForProduct).mockReturnValue(50);
+    vi.mocked(getProductForPolarId).mockReturnValue({
+      credits: 50,
+      packageName: "Small",
+      amount: 499,
+      currency: "CHF",
+    });
   });
 
   it("does not process the same Polar order twice", async () => {
@@ -52,6 +57,10 @@ describe("processPolarOrder", () => {
         polarOrderId: "order-123",
         userId: "user-1",
         credits: 50,
+        packageName: "Small",
+        amount: 499,
+        currency: "CHF",
+        status: "paid",
         createdAt: new Date(),
       });
 
@@ -60,6 +69,10 @@ describe("processPolarOrder", () => {
       polarOrderId: "order-123",
       userId: "user-1",
       credits: 50,
+      packageName: "Small",
+      amount: 499,
+      currency: "CHF",
+      status: "paid",
       createdAt: new Date(),
     });
 
@@ -80,6 +93,10 @@ describe("processPolarOrder", () => {
         polarOrderId: "order-123",
         userId: "user-1",
         credits: 50,
+        packageName: "Small",
+        amount: 499,
+        currency: "CHF",
+        status: "paid",
         createdAt: new Date(),
       },
       {
@@ -168,7 +185,7 @@ describe("processPolarOrder", () => {
       credits: 10,
     });
 
-    vi.mocked(getCreditsForProduct).mockReturnValue(null);
+    vi.mocked(getProductForPolarId).mockReturnValue(null);
 
     const order = {
       id: "order-123",
@@ -198,6 +215,10 @@ describe("processPolarOrder", () => {
     await expect(processPolarOrder(order)).rejects.toThrow(
       "Polar order has no productId",
     );
+
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(db.purchase.findUnique).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 
   it("throws when Polar user does not exist", async () => {

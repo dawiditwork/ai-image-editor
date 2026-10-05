@@ -1,10 +1,21 @@
 "use client";
 
-import { LayoutDashboard, Wand2, FolderOpen, Settings } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "../ui/sidebar";
+import {
+  CreditCard,
+  FolderOpen,
+  LayoutDashboard,
+  Settings,
+  Wand2,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 import { cn } from "~/lib/utils";
+import {
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "../ui/sidebar";
 
 export default function SidebarMenuItems() {
   const path = usePathname();
@@ -30,6 +41,12 @@ export default function SidebarMenuItems() {
       active: false,
     },
     {
+      title: "Billing",
+      url: "/dashboard/billing",
+      icon: CreditCard,
+      active: false,
+    },
+    {
       title: "Settings",
       url: "/dashboard/settings",
       icon: Settings,
@@ -43,7 +60,6 @@ export default function SidebarMenuItems() {
   }));
 
   const handleMenuClick = () => {
-    // Close mobile sidebar when clicking a menu item
     if (isMobile) {
       setOpenMobile(false);
     }
@@ -74,7 +90,9 @@ export default function SidebarMenuItems() {
                     : "text-muted-foreground group-hover:text-primary",
                 )}
               />
+
               <span className="truncate">{item.title}</span>
+
               {item.active && (
                 <div className="bg-primary absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full" />
               )}

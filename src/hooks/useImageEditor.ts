@@ -19,12 +19,14 @@ interface UseImageEditorProps {
   imageRef: RefObject<HTMLImageElement | null>;
   setCredits: React.Dispatch<React.SetStateAction<number>>;
   activeProjectId: string | null;
+  onInsufficientCredits?: () => void;
 }
 export const useImageEditor = ({
   uploadedImage,
   imageRef,
   setCredits,
   activeProjectId,
+  onInsufficientCredits,
 }: UseImageEditorProps) => {
   const router = useRouter();
   const [transformations, setTransformations] = useState<Transformation[]>([]);
@@ -143,6 +145,16 @@ export const useImageEditor = ({
               : type.charAt(0).toUpperCase() + type.slice(1);
     toast.success(`${transformationName} removed.`);
   };
+  const handlePaidActionError = (error?: string) => {
+    if (error === "Insufficient credits") {
+      toast.error("You do not have enough credits.");
+      onInsufficientCredits?.();
+      return;
+    }
+
+    toast.error(error ?? "AI operation failed");
+  };
+
   const removeBackground = async () => {
     if (!uploadedImage) return;
     if (aiUnavailable) {
@@ -166,13 +178,11 @@ export const useImageEditor = ({
       setPendingPaidTransformation("background");
       const result = await applyRemoveBackground(activeProjectId);
       if (!result.success) {
-        setPendingPaidTransformation(null);
-        toast.error(
-          result.error ?? "Failed to remove background",
-        );
-        setIsProcessing(false);
-        return;
-      }
+      setPendingPaidTransformation(null);
+      handlePaidActionError(result.error);
+      setIsProcessing(false);
+      return;
+    }
       setTransformations(result.transformations);
       setCredits(result.remainingCredits);
       toast.success(
@@ -209,13 +219,11 @@ export const useImageEditor = ({
       setPendingPaidTransformation("upscale");
       const result = await applyUpscale(activeProjectId);
       if (!result.success) {
-        setPendingPaidTransformation(null);
-        toast.error(
-          result.error ?? "Failed to upscale image",
-        );
-        setIsProcessing(false);
-        return;
-      }
+      setPendingPaidTransformation(null);
+      handlePaidActionError(result.error);
+      setIsProcessing(false);
+      return;
+    }
       setTransformations(result.transformations);
       setCredits(result.remainingCredits);
       toast.success(
@@ -260,13 +268,11 @@ export const useImageEditor = ({
         cleanInput,
       );
       if (!result.success) {
-        setPendingPaidTransformation(null);
-        toast.error(
-          result.error ?? "Failed to apply smart crop",
-        );
-        setIsProcessing(false);
-        return;
-      }
+      setPendingPaidTransformation(null);
+      handlePaidActionError(result.error);
+      setIsProcessing(false);
+      return;
+    }
       setTransformations(result.transformations);
       setCredits(result.remainingCredits);
       toast.success(
@@ -307,13 +313,11 @@ export const useImageEditor = ({
         cleanPrompt,
       );
       if (!result.success) {
-        setPendingPaidTransformation(null);
-        toast.error(
-          result.error ?? "Failed to apply AI edit",
-        );
-        setIsProcessing(false);
-        return;
-      }
+      setPendingPaidTransformation(null);
+      handlePaidActionError(result.error);
+      setIsProcessing(false);
+      return;
+    }
       setTransformations(result.transformations);
       setCredits(result.remainingCredits);
       toast.success(

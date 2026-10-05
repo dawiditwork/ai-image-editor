@@ -105,7 +105,7 @@ export default function EditorSidebar({
                                     <Button
                                       onClick={removeBackground}
                                       disabled={
-                                            aiUnavailable ||  
+                                            aiUnavailable ||
                                         isProcessing || hasTransformation("background")
                                       }
                                       variant="outline"
@@ -470,7 +470,14 @@ export default function EditorSidebar({
                                 )}
                                 {transformations.length > 0 && (
                                   <Button
-                                    onClick={clearTransformations}
+                                    onClick={() => {
+  const confirmed = window.confirm(
+    "Clear all transformations?\n\nThis will remove all applied edits. Credits will not be refunded.",
+  );
+  if (confirmed) {
+    clearTransformations();
+  }
+}}
                                     disabled={isProcessing}
                                     variant="destructive"
                                     size="sm"
@@ -480,9 +487,9 @@ export default function EditorSidebar({
                                     <span className="text-xs">Clear All</span>
                                   </Button>
                                 )}
-                                <div className="flex gap-2 border-t pt-2">                          
+                                <div className="flex gap-2 border-t pt-2">
                                   {transformations.length > 0 && (
-                                    <>  
+                                    <>
                                     <Button
                                       onClick={downloadImage}
                                       size="sm"

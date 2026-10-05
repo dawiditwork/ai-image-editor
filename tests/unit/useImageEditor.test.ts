@@ -188,4 +188,31 @@ describe("useImageEditor credit refund flow", () => {
     expect(result.current.transformations).toEqual([]);
     expect(actionMocks.undoPaidTransformation).not.toHaveBeenCalled();
   });
+  it("opens the Buy Credits flow when a paid action has insufficient credits", async () => {
+    const setCredits = vi.fn();
+    const onInsufficientCredits = vi.fn();
+
+    actionMocks.applyRemoveBackground.mockResolvedValueOnce({
+      success: false,
+      error: "Insufficient credits",
+    });
+
+    const { result } = renderHook(() =>
+      useImageEditor({
+        uploadedImage,
+        imageRef: { current: null },
+        setCredits,
+        activeProjectId: "project-1",
+        onInsufficientCredits,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.removeBackground();
+    });
+
+    expect(onInsufficientCredits).toHaveBeenCalledTimes(1);
+    expect(actionMocks.undoPaidTransformation).not.toHaveBeenCalled();
+  });
+
 });

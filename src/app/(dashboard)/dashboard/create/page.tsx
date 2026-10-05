@@ -9,6 +9,7 @@ import ImagePreview from "~/components/editor/ImagePreview";
 import ProjectsGrid from "~/components/editor/ProjectsGrid";
 import UploadScreen from "~/components/editor/UploadScreen";
 import PdfConverter from "~/components/PdfConverter";
+import Upgrade from "~/components/sidebar/upgrade";
 import { useImageEditor } from "~/hooks/useImageEditor";
 import { useImageUpload } from "~/hooks/useImageUpload";
 import { usePdf } from "~/hooks/usePdf";
@@ -22,6 +23,7 @@ export default function CreatePage() {
   );
   const [mode, setMode] = useState<EditorMode>("home");
   const [credits, setCredits] = useState(0);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +63,7 @@ export default function CreatePage() {
     imageRef,
     setCredits,
     activeProjectId,
+    onInsufficientCredits: () => setUpgradeOpen(true),
   });
 
   const {
@@ -133,6 +136,12 @@ export default function CreatePage() {
       <RedirectToSignIn />
 
       <SignedIn>
+        <Upgrade
+          open={upgradeOpen}
+          onOpenChange={setUpgradeOpen}
+          showTrigger={false}
+        />
+
         <div className="min-h-screen">
           <div className="border-b border-gray-200 bg-white py-2">
             <div className="mx-auto max-w-7xl text-center">
@@ -273,3 +282,4 @@ export default function CreatePage() {
     </>
   );
 }
+

@@ -99,6 +99,10 @@ model Purchase {
   polarOrderId String   @unique
   userId       String
   credits      Int
+  packageName  String?
+  amount       Int?
+  currency     String?
+  status       String   @default("paid")
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
