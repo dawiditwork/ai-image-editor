@@ -91,7 +91,7 @@ export const usePdf = () => {
    try {
   let pdf: jsPDF | null = null;
 
-  for (const [index, file] of files.entries()) {
+  for  (const file of files) {
     if (!file) continue;
 
     const normalizedImage = await normalizeImage(file);

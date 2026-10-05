@@ -1,5 +1,5 @@
+export const dynamic = "force-dynamic";
 import { CreditCard, History, Sparkles } from "lucide-react";
-
 import { getUserPurchases } from "~/actions/purchases";
 import Upgrade from "~/components/sidebar/upgrade";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

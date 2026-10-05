@@ -2,13 +2,11 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { Polar } from "@polar-sh/sdk";
 import { Resend } from "resend";
-import { getCreditsForProduct } from "~/lib/polar-credits";
 import { processPolarOrder } from "~/lib/process-polar-order";
 
 import { env } from "~/env";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { db } from "~/server/db";
-import { Prisma } from "@prisma/client";
 
 const polarClient = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
@@ -91,7 +89,7 @@ export const auth = betterAuth({
                         font-weight: 700;
                       "
                     >
-                      AI Image Editor
+                      AI Image Toolkit
                     </div>
 
                     <div

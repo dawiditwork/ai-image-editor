@@ -19,7 +19,9 @@ setup("authenticate", async ({ page }) => {
 
   await page.getByRole("button", { name: /sign in/i }).click();
 
-await expect(page).not.toHaveURL(/auth\/sign-in/);
+await page.waitForURL((url) => !url.pathname.includes("/auth/sign-in"), {
+  timeout: 15_000,
+});
 
   await page.context().storageState({
     path: authFile,

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
 import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
 
@@ -9,15 +10,15 @@ export async function GET() {
       headers: await headers(),
     });
 
-    console.log("========== SESSION ==========");
-    console.log(session);
-
-    if (!session) {
-      console.log("❌ NO SESSION");
-
-      return NextResponse.json({
-        credits: 0,
-      });
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        {
+          credits: 0,
+        },
+        {
+          status: 401,
+        },
+      );
     }
 
     const user = await db.user.findUnique({
@@ -29,19 +30,26 @@ export async function GET() {
       },
     });
 
-    console.log("========== USER ==========");
-    console.log(user);
+    if (!user) {
+      return NextResponse.json(
+        {
+          credits: 0,
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
     return NextResponse.json({
-      credits: user?.credits ?? 0,
+      credits: user.credits,
     });
   } catch (error) {
-    console.error("========== API ERROR ==========");
-    console.error(error);
+    console.error("Credits API error:", error);
 
     return NextResponse.json(
       {
-        error: String(error),
+        error: "Failed to fetch credits",
       },
       {
         status: 500,

@@ -84,7 +84,7 @@ const faq = [
   {
     question: "Which features are free?",
     answer:
-      "Resize Images, Format Converter, Smart Subject Focus and PDF tools are completely free and never use AI credits.",
+     "Resize Images, Format Converter and PDF tools are completely free and never use AI credits.",
   },
   {
     question: "Which image formats are supported?",
@@ -94,7 +94,7 @@ const faq = [
   {
     question: "How do AI credits work?",
     answer:
-      "AI credits are only used for AI Image Edit, Background Removal and AI Upscaling. Every new account includes 10 free AI credits. Free tools never consume credits.",
+      "AI credits are used for AI Image Edit, Background Removal, AI Upscaling and Smart Subject Focus. Every new account includes 10 free AI credits. Free tools never consume credits.",
   },
   {
     question: "Do I need an account?",
@@ -416,7 +416,6 @@ export default function HomePage() {
               "JPG, PNG and WebP conversion",
               "Single image to PDF",
               "Multiple images to PDF",
-              "Smart subject focus",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
@@ -461,6 +460,7 @@ export default function HomePage() {
               "Background removal",
               "AI upscaling",
               "AI image editing",
+              "Smart subject focus",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
